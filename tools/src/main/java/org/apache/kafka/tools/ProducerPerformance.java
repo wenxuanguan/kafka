@@ -116,9 +116,12 @@ public class ProducerPerformance {
             if (recordSize != null) {
                 payload = new byte[recordSize];
                 for (int i = 0; i < payload.length; ++i)
-                    payload[i] = (byte) (random.nextInt(26) + 65);
+                    if (i % 7 == 6) {
+                        payload[i] = (byte)32;
+                    } else {
+                        payload[i] = (byte) (random.nextInt(26) + 65);
+                    }
             }
-            ProducerRecord<byte[], byte[]> record;
             Stats stats = new Stats(numRecords, 5000);
             long startMs = System.currentTimeMillis();
 
@@ -136,11 +139,11 @@ public class ProducerPerformance {
                 if (payloadFilePath != null) {
                     payload = payloadByteList.get(random.nextInt(payloadByteList.size()));
                 }
-                record = new ProducerRecord<>(topicName, payload);
 
                 long sendStartMs = System.currentTimeMillis();
                 Callback cb = stats.nextCompletion(sendStartMs, payload.length, stats);
-                producer.send(record, cb);
+                String timestamp = "" + System.currentTimeMillis();
+                producer.send(new ProducerRecord<>(topicName, timestamp.getBytes(StandardCharsets.US_ASCII), payload), cb);
 
                 currentTransactionSize++;
                 if (transactionsEnabled && transactionDurationMs <= (sendStartMs - transactionStartTime)) {
